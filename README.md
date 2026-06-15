@@ -122,6 +122,12 @@ npm run dev
 - **Frontend**: Firebase Hosting
 - **Live**: [lexguard-frontend-712213214076.us-central1.run.app](https://lexguard-frontend-712213214076.us-central1.run.app/)
 
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you'd like to change.
+
+---
+
 ## License
 
 MIT
