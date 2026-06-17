@@ -2,6 +2,11 @@
 
 All notable changes to LexGuard are documented in this file.
 
+## [1.0.3] - 2026-06-17
+
+### Added
+- Health-check note in the changelog for change-detection testing.
+
 ## [1.0.2] - 2026-06-17
 
 ### Changed
