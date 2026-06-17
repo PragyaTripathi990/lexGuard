@@ -35,13 +35,19 @@ def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
     return result['embedding']
 
 
-def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
-    """Compute cosine similarity between two vectors."""
+def cosine_similarity(
+    vec_a: list[float], vec_b: list[float], *, on_zero: float = 0.0
+) -> float:
+    """Compute cosine similarity between two vectors.
+
+    Returns ``on_zero`` when either vector has zero magnitude (cosine is
+    undefined in that case). Defaults to ``0.0`` for backward compatibility.
+    """
     dot_product = sum(a * b for a, b in zip(vec_a, vec_b))
     magnitude_a = sum(a * a for a in vec_a) ** 0.5
     magnitude_b = sum(b * b for b in vec_b) ** 0.5
     if magnitude_a == 0 or magnitude_b == 0:
-        return 0.0
+        return on_zero
     return dot_product / (magnitude_a * magnitude_b)
 
 
