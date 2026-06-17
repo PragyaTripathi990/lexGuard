@@ -2,6 +2,8 @@
 
 **AI-Powered Adversarial Contract Intelligence Platform**
 
+> _Protecting your rights, one clause at a time._
+
 Analyze contracts for exploitative clauses using a multi-agent debate architecture powered by Gemini 2.5. Upload PDFs, DOCX, images, URLs, or raw text in any language --- LexGuard extracts clauses, runs adversarial analysis, and produces explainable risk scores with fair alternative suggestions.
 
 **[Live Demo](https://lexguard-frontend-712213214076.us-central1.run.app/)**

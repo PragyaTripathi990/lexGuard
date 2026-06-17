@@ -34,7 +34,7 @@ app = FastAPI(
     description="AI-Powered Adversarial Contract Intelligence Platform. "
                 "Uses multi-agent debate (Corporate Lawyer vs Consumer Advocate vs Judge) "
                 "with RAG-enhanced legal knowledge base to analyze contracts.",
-    version="1.0.1",
+    version="1.0.2",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -124,7 +124,7 @@ async def root():
             "Adversarial multi-agent AI that analyzes contracts to detect "
             "exploitative clauses, hidden liabilities, and real-world risks."
         ),
-        "version": "1.0.1",
+        "version": "1.0.2",
         "endpoints": {
             "analyze": "POST /api/analyze — Upload and analyze a contract",
             "report": "POST /api/report/pdf — Generate downloadable PDF report",

@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 _env_path = Path(__file__).parent / ".env"
 load_dotenv(_env_path)
 
+# Application version (kept in sync with backend/main.py and pyproject.toml)
+APP_VERSION = "1.0.2"
+
 # Google Cloud Settings
 GCP_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "")
 GCP_LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
