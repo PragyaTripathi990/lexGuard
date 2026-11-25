@@ -8,6 +8,7 @@ For hackathon demo: switch back to Gemini when quota resets.
 """
 import json
 import asyncio
+import logging
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -50,6 +51,8 @@ HEURISTIC_SEGMENTATION_MIN_CLAUSES = max(
 USE_HEURISTIC_SEGMENTATION_FIRST = _env_flag("LEXGUARD_HEURISTIC_SEGMENTATION_FIRST", True)
 USE_LLM_CONTRADICTIONS = _env_flag("LEXGUARD_USE_LLM_CONTRADICTIONS", False)
 USE_LLM_SUMMARY = _env_flag("LEXGUARD_USE_LLM_SUMMARY", False)
+
+logger = logging.getLogger(__name__)
 
 from .prompts import (
     CLAUSE_SEGMENTATION_PROMPT,
@@ -183,6 +186,31 @@ def _parse_json_safe(text: str) -> dict:
         return {}
 
 
+async def _gemini_generate(prompt: str, **generation_config) -> str:
+    """Call Gemini, moving on to the next configured model if one fails.
+
+    Models get retired and the newest ones are often overloaded on the free
+    tier, so a single hard-coded model is a single point of failure.
+    """
+    import google.generativeai as genai
+    from backend.config import GEMINI_API_KEY, GEMINI_MODELS
+
+    genai.configure(api_key=GEMINI_API_KEY)
+    last_error = None
+    for model_name in GEMINI_MODELS:
+        try:
+            model = genai.GenerativeModel(model_name)
+            response = await asyncio.to_thread(
+                model.generate_content, prompt,
+                generation_config=genai.types.GenerationConfig(**generation_config),
+            )
+            return response.text
+        except Exception as exc:  # noqa: BLE001 - any provider error triggers the fallback
+            last_error = exc
+            logger.warning("Gemini model %s failed: %s", model_name, str(exc)[:200])
+    raise last_error if last_error else RuntimeError("No Gemini models configured")
+
+
 async def call_llm_json(prompt: str) -> dict:
     """Call LLM and get JSON response."""
     if LLM_PROVIDER == "groq":
@@ -208,18 +236,11 @@ async def call_llm_json(prompt: str) -> dict:
         )
         return json.loads(response.choices[0].message.content)
     else:
-        import google.generativeai as genai
-        from backend.config import GEMINI_API_KEY, GEMINI_FLASH_MODEL
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel(GEMINI_FLASH_MODEL)
-        response = await asyncio.to_thread(
-            model.generate_content, prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.4, max_output_tokens=8192,
-                response_mime_type="application/json",
-            )
+        text = await _gemini_generate(
+            prompt, temperature=0.4, max_output_tokens=8192,
+            response_mime_type="application/json",
         )
-        return json.loads(response.text)
+        return json.loads(text)
 
 
 async def call_llm_text(prompt: str) -> str:
@@ -245,17 +266,7 @@ async def call_llm_text(prompt: str) -> str:
         )
         return response.choices[0].message.content
     else:
-        import google.generativeai as genai
-        from backend.config import GEMINI_API_KEY, GEMINI_FLASH_MODEL
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel(GEMINI_FLASH_MODEL)
-        response = await asyncio.to_thread(
-            model.generate_content, prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.7, max_output_tokens=4096,
-            )
-        )
-        return response.text
+        return await _gemini_generate(prompt, temperature=0.7, max_output_tokens=4096)
 
 
 # ============================================================

@@ -1,11 +1,12 @@
-frontend/
 .git/
-__pycache__/
-*.pyc
+**/__pycache__/
+**/*.pyc
 .env
 backend/.env
-node_modules/
-.next/
+**/.env.local
+**/node_modules/
+frontend/.next/
+frontend/out/
 *.log
 .DS_Store
 sample_docs/

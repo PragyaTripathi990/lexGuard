@@ -20,9 +20,11 @@ Google Cloud Services Used:
 import os
 import time
 from collections import defaultdict
+from pathlib import Path
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from backend.routers.analyze import router as analyze_router
 
 
@@ -113,8 +115,13 @@ async def security_headers_middleware(request: Request, call_next):
 # ============================================================
 app.include_router(analyze_router)
 
+# When the exported frontend is present (single-container deploys), this same
+# server hosts it, so the site and its API share one origin.
+FRONTEND_DIR = Path(os.getenv("FRONTEND_DIST", Path(__file__).resolve().parent.parent / "frontend" / "out"))
+SERVE_FRONTEND = (FRONTEND_DIR / "index.html").is_file()
 
-@app.get("/")
+
+@app.get("/api/info")
 async def root():
     """Root endpoint with API information and Google services documentation."""
     return {
@@ -152,3 +159,9 @@ async def root():
             "Firebase Hosting (Frontend)",
         ],
     }
+
+
+if SERVE_FRONTEND:
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+else:
+    app.add_api_route("/", root, methods=["GET"])

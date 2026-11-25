@@ -23,7 +23,8 @@ import {
 } from "lucide-react";
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+// An empty NEXT_PUBLIC_API_URL means "same origin" (the API serves this site).
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 // ============================================================
 // TYPES

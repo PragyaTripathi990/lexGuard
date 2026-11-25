@@ -1,41 +1,44 @@
-# LexGuard — Google Cloud Run Dockerfile
-# Multi-stage build for smaller image size
+# LexGuard — single container: FastAPI backend that also serves the
+# statically exported Next.js frontend. Works on Render, Cloud Run, etc.
+
+# ---- Frontend build ----
+FROM node:20-alpine AS frontend
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+# Empty API URL = call the API on the same origin the site is served from.
+ENV NEXT_PUBLIC_API_URL=""
+RUN npm run build
+
+# ---- Python dependencies ----
 FROM python:3.11-slim AS builder
-
 WORKDIR /app
-
-# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
-
-# Copy and install Python dependencies
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Production stage
+# ---- Runtime ----
 FROM python:3.11-slim
-
 WORKDIR /app
 
-# Copy installed packages from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code
 COPY backend/ ./backend/
+COPY --from=frontend /app/frontend/out ./frontend/out
 
 # Create non-root user for security
 RUN useradd --create-home appuser
 USER appuser
 
-# Cloud Run uses PORT env variable
+# The platform provides PORT; 8080 is the local default.
 ENV PORT=8080
 EXPOSE 8080
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health')" || exit 1
+    CMD python -c "import os, urllib.request; urllib.request.urlopen(f'http://localhost:{os.environ.get(\"PORT\", \"8080\")}/api/health')" || exit 1
 
-# Run with uvicorn
 CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
